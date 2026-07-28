@@ -137,7 +137,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # SMTP Contfiguration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
@@ -147,7 +147,10 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
 
 # DRF Contfiguration
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication',],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
+        ,'rest_framework.authentication.SessionAuthentication',
+    ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
@@ -175,14 +178,18 @@ SIMPLE_JWT = {
 
 
 # DJOSER Contfiguration
-# DJOSER = {
-#     "PASSWORD_RESET_CONFIRM_RETYPE": True,
-#     "USER_CREATE_PASSWORD_RETYPE": True,
-#     "SET_PASSWORD_RETYPE": True,
-#     "SEND_ACTIVATION_EMAIL": True,
-#     "ACTIVATION_URL": "activate/{uid}/{token}",
-#     "PASSWORD_RESET_CONFIRM_URL": "reset-password/{uid}/{token}",
-# }
+DJOSER = {
+    "PASSWORD_RESET_CONFIRM_RETYPE": True,
+    "SET_PASSWORD_RETYPE": True,
+    "SEND_ACTIVATION_EMAIL": True,
+    "ACTIVATION_URL": "activate/{uid}/{token}",
+    "PASSWORD_RESET_CONFIRM_URL": "reset-password/{uid}/{token}",
+    "SERIALIZERS" : {
+        "user_create": "apps.accounts.serializers.CustomUserCreateSerializer",
+        "user": "apps.accounts.serializers.CustomUserSerializer",
+        "current_user" : "apps.accounts.serializers.CustomUserSerializer",
+    }
+}
 
 
 # CACHE REDIS

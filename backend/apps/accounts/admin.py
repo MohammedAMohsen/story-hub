@@ -8,6 +8,12 @@ class ProfileInline(admin.StackedInline):
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
+    fieldsets = UserAdmin.fieldsets + ((
+        "Extra Fields",
+        {
+            "fields":("pending_email",)
+        },
+    ),)
     list_display = (
         "id",
         "email",
