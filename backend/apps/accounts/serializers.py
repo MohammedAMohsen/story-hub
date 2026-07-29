@@ -5,20 +5,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from rest_framework import serializers
 from django.utils.text import slugify
-from .models import User
+from .models import User, Profile
+from .validators import validate_username, validate_email, validate_avatar_cover
 
-
-RESERVED_USERNAMES = {
-    "admin", "administrator",
-    "root", "superuser",
-    "system", "support",
-}
-
-BLOCKED_EMAIL_DOMAINS = {
-    "mailinator.com",
-    "10minutemail.com",
-    "tempmail.com",
-}
 
 
 class CustomUserCreateSerializer(UserCreatePasswordRetypeSerializer):
@@ -27,9 +16,7 @@ class CustomUserCreateSerializer(UserCreatePasswordRetypeSerializer):
         fields = ('first_name', 'last_name', 'email', "password")
 
     def validate_email(self, value):
-        if value.split('@')[-1].lower() in BLOCKED_EMAIL_DOMAINS:
-            raise serializers.ValidationError("Temporary email addresses are not allowed.")
-        return value.lower()
+        return validate_email(value)
 
     def perform_create(self, validated_data):
         base_username = slugify(validated_data['email'].split('@')[0])
@@ -52,19 +39,16 @@ class CustomUserSerializer(UserSerializer):
         }
 
     def validate_username(self, value):
-        if value.lower() in RESERVED_USERNAMES:
-            raise serializers.ValidationError("This username is reserved.")
-        return value.lower()
+        return validate_username(value)
 
     def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}"
+            return obj.get_full_name()
 
 
 class ChangeEmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
     def validate_email(self, value):
-        if value.split('@')[-1].lower() in BLOCKED_EMAIL_DOMAINS:
-            raise serializers.ValidationError("Temporary email addresses are not allowed.")
+        value = validate_email(value)
         user = self.context["request"].user
         if value == user.email:
             raise serializers.ValidationError("This is already your current email.")
@@ -77,7 +61,6 @@ class ChangeEmailSerializer(serializers.Serializer):
 
 
 class ConfirmEmailChangeSerializer(serializers.Serializer):
-
     uid = serializers.CharField()
     token = serializers.CharField()
     default_error_messages = {
@@ -109,3 +92,35 @@ class LogoutSerializer(serializers.Serializer):
             token.blacklist()
         except Exception:
             raise serializers.ValidationError("Invalid token")
+
+
+class PrivateProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = (
+            'avatar','cover','bio', 'birth_date',
+            'location', 'website', 'github',
+            'linkedin','is_identity_verified'
+        )
+        extra_kwargs = {
+            'is_identity_verified': {'read_only': True}
+        }
+    def validate_avatar(self, value):
+        return validate_avatar_cover(value)
+
+    def validate_cover(self, value):
+        return validate_avatar_cover(value)
+
+
+class PublicProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    full_name = serializers.SerializerMethodField()
+    class Meta:
+        model = Profile
+        fields = (
+            'username', 'full_name', 'avatar',
+            'cover','bio', 'website', 'github',
+            'linkedin','is_identity_verified'
+        )
+    def get_full_name(self, obj):
+        return obj.user.get_full_name()

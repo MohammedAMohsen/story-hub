@@ -14,6 +14,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("auth/", include(router.urls)),
     path('auth/', include('djoser.urls.jwt')),
+    path("api/", include('apps.accounts.urls')),
     
     # Silk-Profiling & Inspection
     path('silk/', include('silk.urls', namespace='silk')),
