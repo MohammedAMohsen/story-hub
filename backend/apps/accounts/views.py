@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets
+from rest_framework import filters
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from .services import change_user_email, confirm_user_email
@@ -50,7 +51,7 @@ class CustomUserViewSet(UserViewSet):
         )
 
 
-class ProfileViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Profile.objects.select_related('user')
     serializer_class = PublicProfileSerializer
     lookup_field = 'username'
@@ -68,13 +69,16 @@ class ProfileViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             permission_classes = [AllowAny]
         return [permission() for permission in permission_classes]
 
+    filter_backends = [filters.SearchFilter,]
+    search_fields = ["^user__username", "^user__first_name", "^user__last_name",]
+
     @action(detail=False, methods=['GET','PUT','PATCH'], url_path="me")
     def me(self, request):
         queryset = get_object_or_404(Profile, user=request.user)
-        if self.request.method == 'GET':
+        if request.method == 'GET':
             serializer = PrivateProfileSerializer(queryset)
             return Response(serializer.data)
-        is_partial = self.request.method == 'PATCH'
+        is_partial = request.method == 'PATCH'
         serializer = PrivateProfileSerializer(queryset, data=request.data, partial=is_partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
