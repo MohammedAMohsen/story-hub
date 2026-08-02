@@ -3,15 +3,25 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.exceptions import ValidationError
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.db.models import Count
 from rest_framework import filters
-from .permissions import IsAuthor
-from .serializers import StoryWriteSerializer, StorySerializer, CategorySerializer
-from .models import Story, Category
+from .permissions import IsAuthor, IsOwner
+from .models import Story, Category, Comment
+from .serializers import (StoryWriteSerializer,
+    StorySerializer,CategorySerializer,
+    CommentWriteSerializer, CommentSerializer)
 
 
 class StoryViewSet(viewsets.ModelViewSet):
-    queryset = Story.objects.select_related('author__profile', 'category').prefetch_related('tags')
+    queryset = (
+        Story.objects
+        .select_related('author__profile', 'category')
+        .prefetch_related('tags')
+        .annotate(comments_count=Count("comments"))
+    )
     serializer_class = StoryWriteSerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'slug'
@@ -40,7 +50,7 @@ class StoryViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
-        if self.action in ['list', 'retrieve', 'me', 'author_stories']:
+        if self.action in ['list', 'me', 'retrieve', 'author_stories']:
             return StorySerializer
         return super().get_serializer_class()
 
@@ -67,7 +77,7 @@ class StoryViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['GET'],  url_path="me")
+    @action(detail=False, methods=['GET'], url_path="me")
     def me(self, request):
         queryset = self.get_queryset().filter(author=request.user)
         return self.serialize_queryset(queryset)
@@ -83,3 +93,57 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
     pagination_class = None
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.select_related("user__profile")
+    serializer_class = CommentWriteSerializer
+
+    @property
+    def get_story(self):
+        return self.request.query_params.get("story")
+
+    def get_queryset(self):
+        story_slug = self.get_story
+        queryset = super().get_queryset().annotate(replies_count=Count("replies"))
+        if not story_slug and self.action == 'list':
+            raise ValidationError(detail="Story parameter is required.")
+        if self.action == 'list':
+            return queryset.filter(story__slug=story_slug, parent__isnull=True)
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action in ["list", "retrieve", 'replies']:
+            return CommentSerializer
+        return super().get_serializer_class()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        story_slug = self.get_story
+        if story_slug:
+            context['story'] = get_object_or_404(Story, slug=story_slug)
+        return context
+
+    def perform_create(self, serializer):
+        story = get_object_or_404(Story, slug=self.get_story)
+        return serializer.save(user=self.request.user, story=story)
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'replies']:
+            permission_classes = [AllowAny]
+        elif self.action in ['create']:
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsAuthenticated, IsOwner]
+        return [permission() for permission in permission_classes]
+
+    @action(detail=True, methods=['GET'], url_path='replies')
+    def replies(self, request, pk=None):
+        comment = self.get_object()
+        replies = comment.replies.all()
+        page = self.paginate_queryset(replies)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(replies, many=True)
+        return Response(serializer.data)

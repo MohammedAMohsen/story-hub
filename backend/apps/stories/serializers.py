@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.accounts.validators import validate_avatar_cover
-from .models import Story, Category, Tag
+from .models import Story, Category, Tag, Comment
 
 
 class TagField(serializers.Field):
@@ -30,7 +30,7 @@ class StoryWriteSerializer(serializers.ModelSerializer):
     tags = TagField(required=False)
     class Meta:
         model = Story
-        fields = ('title', 'content', 'category', 'tags', 'cover')
+        fields = ('title', 'content', 'category', 'tags', 'cover', 'status')
 
     def validate_cover(self, value):
         return validate_avatar_cover(value)
@@ -58,15 +58,16 @@ class StorySerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='author.username')
     full_name = serializers.CharField(source='author.get_full_name')
     avatar = serializers.ImageField(source='author.profile.avatar')
-    category = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField(read_only=True)
     tags = TagField(read_only=True)
+    comments_count = serializers.IntegerField(read_only=True)
     class Meta:
         model = Story
         fields = (
-            'username', 'full_name', 'avatar',
+            'username', 'full_name', 'avatar', 'slug',
             'title', 'content', 'category', 'tags', 'cover',
             'status', 'created_at', 'updated_at',
-            #likes_count, comments_count,
+            'comments_count', #likes_count,
         )
     def get_category(self, obj):
         return obj.category.name if obj.category else None
@@ -76,3 +77,33 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ('id',"name",'slug')
+
+
+class CommentWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ('content','parent')
+
+    def validate(self, attrs):
+        parent = attrs.get("parent")
+        if parent:
+            if parent.parent is not None:
+                raise serializers.ValidationError("Replies cannot have replies.")
+
+            story = self.context.get('story')
+            if story and parent.story != story:
+                raise serializers.ValidationError("You cannot reply to a comment from another story.")
+        return attrs
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    full_name = serializers.CharField(source='user.get_full_name')
+    avatar = serializers.ImageField(source='user.profile.avatar')
+    replies_count = serializers.IntegerField(read_only=True)
+    class Meta:
+        model = Comment
+        fields = (
+            'id', 'username', 'full_name', 'avatar',
+            'content', 'created_at', 'updated_at', 'parent', 'replies_count', #likes_count,
+        )

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+import uuid
 
 
 class Category(models.Model):
@@ -18,6 +19,7 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=30, unique=True)
@@ -40,7 +42,7 @@ class Story(models.Model):
     slug = models.SlugField(max_length=100, unique=True, blank=True)
     category = models.ForeignKey(Category, related_name='stories', blank=True, null=True, on_delete=models.SET_NULL)
     tags = models.ManyToManyField(Tag, related_name='stories', blank=True)
-    status = models.CharField(max_length=10, choices=StatusChoices.choices, default=StatusChoices.PUBLISHED)
+    status = models.CharField(max_length=10, choices=StatusChoices.choices, default=StatusChoices.DRAFT)
     cover = models.ImageField(upload_to='story/cover/', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -63,3 +65,19 @@ class Story(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Comment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False,)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments')
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name='comments')
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+    content = models.TextField(blank=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return str(self.content[:30])
