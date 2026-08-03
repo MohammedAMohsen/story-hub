@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # apps
     'apps.accounts',
     'apps.stories',
+    'apps.likes',
 ]
 
 MIDDLEWARE = [

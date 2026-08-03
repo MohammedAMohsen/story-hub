@@ -61,16 +61,24 @@ class StorySerializer(serializers.ModelSerializer):
     category = serializers.SerializerMethodField(read_only=True)
     tags = TagField(read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
+    likes_count = serializers.IntegerField(read_only=True)
+    is_liked = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Story
         fields = (
             'username', 'full_name', 'avatar', 'slug',
-            'title', 'content', 'category', 'tags', 'cover',
-            'status', 'created_at', 'updated_at',
-            'comments_count', #likes_count,
+            'title', 'content', 'category', 'tags',
+            'cover','status', 'created_at', 'updated_at',
+            'comments_count', 'likes_count', 'is_liked'
         )
     def get_category(self, obj):
         return obj.category.name if obj.category else None
+    
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if not request.user.is_authenticated:
+            return False
+        return obj.likes.filter(user=request.user).exists()
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -89,7 +97,6 @@ class CommentWriteSerializer(serializers.ModelSerializer):
         if parent:
             if parent.parent is not None:
                 raise serializers.ValidationError("Replies cannot have replies.")
-
             story = self.context.get('story')
             if story and parent.story != story:
                 raise serializers.ValidationError("You cannot reply to a comment from another story.")
@@ -101,9 +108,29 @@ class CommentSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source='user.get_full_name')
     avatar = serializers.ImageField(source='user.profile.avatar')
     replies_count = serializers.IntegerField(read_only=True)
+    likes_count = serializers.SerializerMethodField(read_only=True)
+    is_liked = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Comment
         fields = (
-            'id', 'username', 'full_name', 'avatar',
-            'content', 'created_at', 'updated_at', 'parent', 'replies_count', #likes_count,
+            'id', 'username', 'full_name', 'avatar','content',
+            'created_at', 'updated_at','parent', 'replies_count',
+            'likes_count', 'is_liked',
         )
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+    
+    # TODO:
+    # Replace this SerializerMethodField implementation with an annotated
+    # likes_count query after migrating from SQLite to PostgreSQL.
+    # ---
+    # Reason:
+    # SQLite has limitations when aggregating GenericRelation data where the
+    # related object's primary key is UUID (Comment.id). PostgreSQL handles this
+    # case correctly, allowing database-level counting with Count("likes").
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if not request.user.is_authenticated:
+            return False
+        return obj.likes.filter(user=request.user).exists()

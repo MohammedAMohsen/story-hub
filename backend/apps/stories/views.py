@@ -20,7 +20,7 @@ class StoryViewSet(viewsets.ModelViewSet):
         Story.objects
         .select_related('author__profile', 'category')
         .prefetch_related('tags')
-        .annotate(comments_count=Count("comments"))
+        .annotate(comments_count=Count("comments", distinct=True), likes_count=Count('likes', distinct=True))
     )
     serializer_class = StoryWriteSerializer
     lookup_field = 'slug'
@@ -96,7 +96,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.select_related("user__profile")
+    queryset = Comment.objects.select_related("user__profile").annotate(replies_count=Count("replies"))
     serializer_class = CommentWriteSerializer
 
     @property
@@ -105,7 +105,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         story_slug = self.get_story
-        queryset = super().get_queryset().annotate(replies_count=Count("replies"))
+        queryset = super().get_queryset()
         if not story_slug and self.action == 'list':
             raise ValidationError(detail="Story parameter is required.")
         if self.action == 'list':

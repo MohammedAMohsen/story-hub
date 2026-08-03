@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from django.contrib.contenttypes.fields import GenericRelation
+from apps.likes.models import Like
 import uuid
 
 
@@ -44,6 +46,7 @@ class Story(models.Model):
     tags = models.ManyToManyField(Tag, related_name='stories', blank=True)
     status = models.CharField(max_length=10, choices=StatusChoices.choices, default=StatusChoices.DRAFT)
     cover = models.ImageField(upload_to='story/cover/', blank=True)
+    likes = GenericRelation(Like, related_query_name='story')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -73,6 +76,7 @@ class Comment(models.Model):
     story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name='comments')
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
     content = models.TextField(blank=False)
+    likes = GenericRelation(Like, related_query_name='comment')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
