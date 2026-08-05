@@ -62,23 +62,18 @@ class StorySerializer(serializers.ModelSerializer):
     tags = TagField(read_only=True)
     comments_count = serializers.IntegerField(read_only=True)
     likes_count = serializers.IntegerField(read_only=True)
-    is_liked = serializers.SerializerMethodField(read_only=True)
+    is_liked = serializers.BooleanField(read_only=True)
+    is_saved = serializers.BooleanField(read_only=True)
     class Meta:
         model = Story
         fields = (
             'username', 'full_name', 'avatar', 'slug',
             'title', 'content', 'category', 'tags',
             'cover','status', 'created_at', 'updated_at',
-            'comments_count', 'likes_count', 'is_liked'
+            'comments_count', 'likes_count', 'is_liked', 'is_saved'
         )
     def get_category(self, obj):
         return obj.category.name if obj.category else None
-    
-    def get_is_liked(self, obj):
-        request = self.context.get('request')
-        if not request.user.is_authenticated:
-            return False
-        return obj.likes.filter(user=request.user).exists()
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -120,17 +115,26 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_likes_count(self, obj):
         return obj.likes.count()
     
-    # TODO:
-    # Replace this SerializerMethodField implementation with an annotated
-    # likes_count query after migrating from SQLite to PostgreSQL.
-    # ---
-    # Reason:
-    # SQLite has limitations when aggregating GenericRelation data where the
-    # related object's primary key is UUID (Comment.id). PostgreSQL handles this
-    # case correctly, allowing database-level counting with Count("likes").
-
     def get_is_liked(self, obj):
         request = self.context.get('request')
         if not request.user.is_authenticated:
             return False
         return obj.likes.filter(user=request.user).exists()
+    
+    # TODO (PostgreSQL):
+    # Replace both `likes_count` and `is_liked` SerializerMethodFields with
+    # database annotations (Count + Exists) after migrating to PostgreSQL.
+    #
+    # Why not now?
+    # This project currently uses SQLite, which has limitations when querying
+    # GenericRelation objects whose target model uses a UUID primary key
+    # (Comment.id). These limitations lead to incorrect results and even
+    # OverflowError exceptions in some GenericForeignKey lookups.
+    #
+    # Current workaround:
+    # - likes_count -> obj.likes.count()
+    # - is_liked    -> obj.likes.filter(user=request.user).exists()
+    #
+    # PostgreSQL correctly handles these GenericRelation + UUID queries, making
+    # annotated Count("likes") and Exists(...) the preferred and more efficient
+    # implementation.

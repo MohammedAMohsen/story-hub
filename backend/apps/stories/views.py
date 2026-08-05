@@ -4,24 +4,23 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
+from django.db.models import Q, Count, Exists, OuterRef, Value, BooleanField
 from rest_framework import filters
+from apps.bookmarks.models import Bookmark
+from apps.likes.models import Like
 from .permissions import IsAuthor, IsOwner
 from .models import Story, Category, Comment
-from .serializers import (StoryWriteSerializer,
+from .serializers import (
+    StoryWriteSerializer,
     StorySerializer,CategorySerializer,
-    CommentWriteSerializer, CommentSerializer)
+    CommentWriteSerializer,
+    CommentSerializer
+)
 
 
 class StoryViewSet(viewsets.ModelViewSet):
-    queryset = (
-        Story.objects
-        .select_related('author__profile', 'category')
-        .prefetch_related('tags')
-        .annotate(comments_count=Count("comments", distinct=True), likes_count=Count('likes', distinct=True))
-    )
+    queryset = Story.objects.all()
     serializer_class = StoryWriteSerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'slug'
@@ -58,7 +57,26 @@ class StoryViewSet(viewsets.ModelViewSet):
         return serializer.save(author=self.request.user)
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        if self.request.user.is_authenticated:
+            is_liked = Exists(Like.objects.filter(user=self.request.user, story=OuterRef("pk")))
+            is_saved = Exists(Bookmark.objects.filter(user=self.request.user, story=OuterRef("pk")))
+        else:
+            is_liked = Value(False, output_field=BooleanField())
+            is_saved = Value(False, output_field=BooleanField())
+        queryset = (
+            super()
+            .get_queryset()
+            .order_by('-created_at')
+            .select_related('author__profile', 'category')
+            .prefetch_related('tags')
+            .annotate(
+                comments_count=Count("comments", distinct=True),
+                likes_count=Count('likes', distinct=True),
+                is_liked = is_liked,
+                is_saved = is_saved,
+            )
+        )
+        
         condition=Q()
         if self.action == 'list':
             return queryset.filter(status=Story.StatusChoices.PUBLISHED)
@@ -80,6 +98,9 @@ class StoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['GET'], url_path="me")
     def me(self, request):
         queryset = self.get_queryset().filter(author=request.user)
+        status = request.query_params.get("status")
+        if status:
+            queryset = queryset.filter(status=status)
         return self.serialize_queryset(queryset)
 
     @action(detail=False, methods=['GET'], url_path=r'author/(?P<username>[a-zA-Z0-9_.-]+)')

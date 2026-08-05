@@ -14,7 +14,7 @@ class Like(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'content_type', 'object_id'], 
-                name='unique_user_love_per_object'
+                name='unique_user_like_per_object'
             )
         ]
     def __str__(self):
