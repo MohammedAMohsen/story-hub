@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'apps.stories',
     'apps.likes',
     'apps.bookmarks',
+    'apps.follows',
 ]
 
 MIDDLEWARE = [

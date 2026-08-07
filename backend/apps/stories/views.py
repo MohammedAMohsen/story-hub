@@ -9,6 +9,7 @@ from django.db.models import Q, Count, Exists, OuterRef, Value, BooleanField
 from rest_framework import filters
 from apps.bookmarks.models import Bookmark
 from apps.likes.models import Like
+from apps.follows.models import Follow
 from .permissions import IsAuthor, IsOwner
 from .models import Story, Category, Comment
 from .serializers import (
@@ -60,9 +61,11 @@ class StoryViewSet(viewsets.ModelViewSet):
         if self.request.user.is_authenticated:
             is_liked = Exists(Like.objects.filter(user=self.request.user, story=OuterRef("pk")))
             is_saved = Exists(Bookmark.objects.filter(user=self.request.user, story=OuterRef("pk")))
+            is_following = Exists(Follow.objects.filter(follower=self.request.user, following=OuterRef('author')))
         else:
             is_liked = Value(False, output_field=BooleanField())
             is_saved = Value(False, output_field=BooleanField())
+            is_following = Value(False, output_field=BooleanField())
         queryset = (
             super()
             .get_queryset()
@@ -74,6 +77,7 @@ class StoryViewSet(viewsets.ModelViewSet):
                 likes_count=Count('likes', distinct=True),
                 is_liked = is_liked,
                 is_saved = is_saved,
+                is_following = is_following,
             )
         )
         

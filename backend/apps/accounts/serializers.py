@@ -95,12 +95,15 @@ class LogoutSerializer(serializers.Serializer):
 
 
 class PrivateProfileSerializer(serializers.ModelSerializer):
+    followers_count = serializers.IntegerField(read_only=True)
+    following_count = serializers.IntegerField(read_only=True)
+    story_count = serializers.IntegerField(read_only=True)
     class Meta:
         model = Profile
         fields = (
-            'avatar','cover','bio', 'birth_date',
-            'location', 'website', 'github',
-            'linkedin','is_identity_verified'
+            'avatar','cover','bio', 'birth_date','location',
+            'website', 'github', 'linkedin','is_identity_verified',
+            'followers_count', 'following_count', 'story_count'
         )
         extra_kwargs = {
             'is_identity_verified': {'read_only': True}
@@ -114,13 +117,15 @@ class PrivateProfileSerializer(serializers.ModelSerializer):
 
 class PublicProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
-    full_name = serializers.SerializerMethodField()
+    full_name = serializers.CharField(source='user.get_full_name')
+    followers_count = serializers.IntegerField(read_only=True)
+    following_count = serializers.IntegerField(read_only=True)
+    is_following = serializers.BooleanField(read_only=True)
+    story_count = serializers.IntegerField(read_only=True)
     class Meta:
         model = Profile
         fields = (
-            'username', 'full_name', 'avatar',
-            'cover','bio', 'website', 'github',
-            'linkedin','is_identity_verified'
+            'username', 'full_name', 'avatar', 'cover','bio',
+            'website', 'github', 'linkedin','is_identity_verified',
+            'followers_count', 'following_count', 'is_following','story_count'
         )
-    def get_full_name(self, obj):
-        return obj.user.get_full_name()

@@ -2,6 +2,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets
 from rest_framework import filters
+from apps.follows.models import Follow
+from django.db.models import Count, Exists, OuterRef, Value, BooleanField
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from .services import change_user_email, confirm_user_email
@@ -57,7 +59,19 @@ class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = 'username'
 
     def get_queryset(self):
-        return super().get_queryset().filter(user__is_active=True)
+        if self.request.user.is_authenticated:
+            is_following = Exists(Follow.objects.filter(follower=self.request.user, following=OuterRef('user')))
+        else:
+            is_following = Value(False, output_field=BooleanField())
+        return (super()
+            .get_queryset().filter(user__is_active=True)
+            .annotate(
+                followers_count=Count("user__follower_relationships", distinct=True),
+                following_count=Count('user__following_relationships', distinct=True),
+                story_count=Count('user__stories', distinct=True),
+                is_following=is_following
+            )
+        )
 
     def get_object(self):
         return get_object_or_404(self.get_queryset(), user__username=self.kwargs['username'])
@@ -74,7 +88,16 @@ class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['GET','PUT','PATCH'], url_path="me")
     def me(self, request):
-        queryset = get_object_or_404(Profile, user=request.user)
+        # queryset = get_object_or_404(Profile, user=request.user)
+        queryset = (
+            Profile.objects
+            .filter(user=request.user)
+            .annotate(
+                followers_count=Count("user__follower_relationships", distinct=True),
+                following_count=Count('user__following_relationships', distinct=True),
+                story_count=Count('user__stories', distinct=True),
+            ).first()
+        )
         if request.method == 'GET':
             serializer = PrivateProfileSerializer(queryset)
             return Response(serializer.data)

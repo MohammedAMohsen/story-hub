@@ -35,11 +35,6 @@ class StoryWriteSerializer(serializers.ModelSerializer):
     def validate_cover(self, value):
         return validate_avatar_cover(value)
 
-    def validate_content(self, value):
-        if len(value) < 20:
-            raise serializers.ValidationError('The content is very short.')
-        return value
-
     def create(self, validated_data):
         tags = validated_data.pop('tags', [])
         story = Story.objects.create(**validated_data)
@@ -64,13 +59,15 @@ class StorySerializer(serializers.ModelSerializer):
     likes_count = serializers.IntegerField(read_only=True)
     is_liked = serializers.BooleanField(read_only=True)
     is_saved = serializers.BooleanField(read_only=True)
+    is_following = serializers.BooleanField(read_only=True)
     class Meta:
         model = Story
         fields = (
             'username', 'full_name', 'avatar', 'slug',
             'title', 'content', 'category', 'tags',
             'cover','status', 'created_at', 'updated_at',
-            'comments_count', 'likes_count', 'is_liked', 'is_saved'
+            'comments_count', 'likes_count', 'is_liked',
+            'is_saved', 'is_following'
         )
     def get_category(self, obj):
         return obj.category.name if obj.category else None

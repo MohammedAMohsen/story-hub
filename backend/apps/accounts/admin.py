@@ -25,6 +25,7 @@ class UserAdmin(UserAdmin):
         "email",
         "username",
     )
+    ordering = ('id',) 
     inlines = [ProfileInline]
 
 
