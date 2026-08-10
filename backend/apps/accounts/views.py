@@ -34,8 +34,8 @@ class CustomUserViewSet(UserViewSet):
         confirm_user_email(serializer.validated_data['user'])
         return Response(
             {
-            "message":
-            "Email changed successfully. Please login again."
+                "message":
+                "Email changed successfully. Please login again."
             }
         ) 
 
@@ -88,7 +88,6 @@ class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['GET','PUT','PATCH'], url_path="me")
     def me(self, request):
-        # queryset = get_object_or_404(Profile, user=request.user)
         queryset = (
             Profile.objects
             .filter(user=request.user)

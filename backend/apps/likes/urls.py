@@ -3,5 +3,5 @@ from . import views
 
 
 urlpatterns = [
-    path('like', views.LikeAPIView.as_view(), name='like'),
+    path('like/', views.LikeAPIView.as_view(), name='like'),
 ]

@@ -6,7 +6,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from rest_framework import serializers
 from django.utils.text import slugify
 from .models import User, Profile
-from .validators import validate_username, validate_email, validate_avatar_cover
+from .validators import validate_username, validate_email, validate_avatar_cover, validate_name
 
 
 
@@ -14,6 +14,12 @@ class CustomUserCreateSerializer(UserCreatePasswordRetypeSerializer):
     class Meta(UserCreatePasswordRetypeSerializer.Meta):
         model = User
         fields = ('first_name', 'last_name', 'email', "password")
+
+    def validate_first_name(self, value):
+        return validate_name(value)
+
+    def validate_last_name(self, value):
+        return validate_name(value)
 
     def validate_email(self, value):
         return validate_email(value)
@@ -30,7 +36,7 @@ class CustomUserCreateSerializer(UserCreatePasswordRetypeSerializer):
 
 
 class CustomUserSerializer(UserSerializer):
-    full_name = serializers.SerializerMethodField()
+    full_name = serializers.CharField(source='get_full_name')
     class Meta(UserSerializer.Meta):
         model = User
         fields = ('id', 'first_name', 'last_name', 'full_name', 'username', 'email', 'date_joined')
@@ -38,11 +44,14 @@ class CustomUserSerializer(UserSerializer):
             'date_joined': {'read_only': True}
         }
 
+    def validate_first_name(self, value):
+        return validate_name(value)
+
+    def validate_last_name(self, value):
+        return validate_name(value)
+    
     def validate_username(self, value):
         return validate_username(value)
-
-    def get_full_name(self, obj):
-            return obj.get_full_name()
 
 
 class ChangeEmailSerializer(serializers.Serializer):

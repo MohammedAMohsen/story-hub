@@ -1,5 +1,5 @@
-from datetime import date
 from rest_framework import serializers
+import re
 
 
 RESERVED_USERNAMES = {
@@ -17,6 +17,15 @@ BLOCKED_EMAIL_DOMAINS = {
     "10minutemail.com",
     "tempmail.com",
 }
+
+
+def validate_name(value):
+    pattern = r"^[a-zA-Z\u0621-\u064A]+(?:[ '\-][a-zA-Z\u0621-\u064A]+)?$"
+    if len(value) < 3:
+        raise serializers.ValidationError('The name must be more than 3 letters long.')
+    if not re.match(pattern, value):
+        raise serializers.ValidationError("Real letters only at min, with one separator (space, - or ') at most.")
+    return value
 
 
 def validate_username(value):

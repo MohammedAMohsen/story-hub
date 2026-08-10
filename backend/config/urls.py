@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/", include('apps.likes.urls')),
     path("api/", include('apps.bookmarks.urls')),
     path("api/", include('apps.follows.urls')),
+    path("api/", include('apps.notifications.urls')),
     
     # Silk-Profiling & Inspection
     path('silk/', include('silk.urls', namespace='silk')),

@@ -10,6 +10,7 @@ from rest_framework import filters
 from apps.bookmarks.models import Bookmark
 from apps.likes.models import Like
 from apps.follows.models import Follow
+from apps.accounts.models import User
 from .permissions import IsAuthor, IsOwner
 from .models import Story, Category, Comment
 from .serializers import (
@@ -43,14 +44,14 @@ class StoryViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'author_stories']:
             permission_classes = [AllowAny]
-        elif self.action in ['create', 'me']:
+        elif self.action in ['create', 'me_stories', 'following_stories']:
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsAuthenticated, IsAuthor]
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
-        if self.action in ['list', 'me', 'retrieve', 'author_stories']:
+        if self.action in ['list', 'me_stories', 'retrieve', 'author_stories', 'following_stories']:
             return StorySerializer
         return super().get_serializer_class()
 
@@ -100,7 +101,7 @@ class StoryViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=['GET'], url_path="me")
-    def me(self, request):
+    def me_stories(self, request):
         queryset = self.get_queryset().filter(author=request.user)
         status = request.query_params.get("status")
         if status:
@@ -110,6 +111,11 @@ class StoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['GET'], url_path=r'author/(?P<username>[a-zA-Z0-9_.-]+)')
     def author_stories(self, request, username=None):
         queryset = self.get_queryset().filter(author__username=username,status=Story.StatusChoices.PUBLISHED)
+        return self.serialize_queryset(queryset)
+
+    @action(detail=False, methods=['GET'], url_path='following')
+    def following_stories(self, request):
+        queryset = self.get_queryset().filter(author__follower_relationships__follower=request.user,status=Story.StatusChoices.PUBLISHED)
         return self.serialize_queryset(queryset)
 
 

@@ -11,7 +11,7 @@ class UserAdmin(admin.ModelAdmin):
         "author",
         "slug",
         "status",
-        "updated_at",
+        "created_at",
         'updated_at',
     )
     search_fields = (
@@ -33,4 +33,4 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = ("user", 'story', 'content', 'parent', 'created_at', 'updated_at')
-    search_fields = ("user__username", 'story__title', 'content')
+    search_fields = ("user__username", 'story__title', 'content', 'id')
