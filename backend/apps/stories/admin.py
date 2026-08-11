@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Story, Category, Tag, Comment
+from .models import Story, Category, Tag
+from apps.comments.models import Comment
 
 class CommentInline(admin.TabularInline):
     model = Comment
@@ -29,8 +30,3 @@ class CategoryAdmin(admin.ModelAdmin):
 class TagAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    list_display = ("user", 'story', 'content', 'parent', 'created_at', 'updated_at')
-    search_fields = ("user__username", 'story__title', 'content', 'id')

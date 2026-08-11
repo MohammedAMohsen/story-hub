@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # apps
     'apps.accounts',
     'apps.stories',
+    'apps.comments',
     'apps.likes',
     'apps.bookmarks',
     'apps.follows',

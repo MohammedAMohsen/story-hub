@@ -3,7 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from apps.stories.models import Story, Comment
+from apps.stories.models import Story
+from apps.comments.models import Comment
 from .serializers import LikeSerializers
 from .models import Like
 
