@@ -143,7 +143,8 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # SMTP Contfiguration
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
@@ -197,22 +198,26 @@ DJOSER = {
         "user_create": "apps.accounts.serializers.CustomUserCreateSerializer",
         "user": "apps.accounts.serializers.CustomUserSerializer",
         "current_user" : "apps.accounts.serializers.CustomUserSerializer",
-    }
+    },
+    "EMAIL": {
+        "activation": "apps.accounts.djoser_services.CeleryActivationEmail",
+        "password_reset": "apps.accounts.djoser_services.CeleryPasswordResetEmail",
+    },
 }
 
 
 # CACHE REDIS
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://127.0.0.1:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 
 # tell celery about Redis - same URL as CACHES setting
-# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
-# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/2'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/3'

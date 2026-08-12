@@ -16,6 +16,7 @@ urlpatterns = [
     path('auth/', include('djoser.urls.jwt')),
     path("api/", include('apps.accounts.urls')),
     path("api/", include('apps.stories.urls')),
+    path("api/", include('apps.comments.urls')),
     path("api/", include('apps.likes.urls')),
     path("api/", include('apps.bookmarks.urls')),
     path("api/", include('apps.follows.urls')),
