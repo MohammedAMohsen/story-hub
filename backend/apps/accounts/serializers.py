@@ -3,6 +3,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from django.utils.text import slugify
 from .models import User, Profile
@@ -138,3 +139,16 @@ class PublicProfileSerializer(serializers.ModelSerializer):
             'website', 'github', 'linkedin','is_identity_verified',
             'followers_count', 'following_count', 'is_following','story_count'
         )
+
+
+class GoogleAuthSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+
+class SetNewPasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        user = self.context['request'].user
+        validate_password(value, user=user)
+        return value

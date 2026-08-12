@@ -1,11 +1,17 @@
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import viewsets
+from rest_framework.views import APIView
 from rest_framework import filters
 from apps.follows.models import Follow
 from django.db.models import Count, Exists, OuterRef, Value, BooleanField
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from djoser.views import UserViewSet
+from rest_framework_simplejwt.tokens import RefreshToken
+from .google_auth import verify_google_token, get_or_create_user_from_google
 from .services import change_user_email, confirm_user_email
 from .models import Profile
 from .serializers import (
@@ -14,9 +20,9 @@ from .serializers import (
     LogoutSerializer,
     PrivateProfileSerializer,
     PublicProfileSerializer,
+    GoogleAuthSerializer,
+    SetNewPasswordSerializer,
 )
-from rest_framework import status
-from djoser.views import UserViewSet
 
 
 class CustomUserViewSet(UserViewSet):
@@ -38,6 +44,21 @@ class CustomUserViewSet(UserViewSet):
                 "Email changed successfully. Please login again."
             }
         ) 
+
+    @action(detail=False, methods=["POST"], url_path="set-new-password", url_name="set-new-password")
+    def set_new_password(self, request):
+        if request.user.has_usable_password():
+            return Response(
+                {"detail": "Password is already set. Use change password instead."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = SetNewPasswordSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save(update_fields=['password'])
+        return Response(
+            {"detail": "Password has been set successfully."}
+        )
 
     @action(detail=False, methods=["POST"], url_path="logout")
     def logout(self, request):
@@ -105,3 +126,19 @@ class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class GoogleAuthAPIView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        serializer = GoogleAuthSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = verify_google_token(serializer.validated_data['token'])
+        user = get_or_create_user_from_google(payload)
+        if not user.is_active:
+            raise AuthenticationFailed("No active account found with the given credentials")
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        })

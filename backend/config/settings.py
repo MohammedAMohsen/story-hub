@@ -24,6 +24,9 @@ SITE_NAME = "StoryHub"
 
 EMAIL_FRONTEND_PROTOCOL = "http" if DEBUG else "https"
 
+# Authentction With Google
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -143,8 +146,8 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # SMTP Contfiguration
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
