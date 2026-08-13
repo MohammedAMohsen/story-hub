@@ -41,7 +41,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        story = get_object_or_404(Story, slug=self.get_story_slug)
+        story = get_object_or_404(Story, slug=self.get_story_slug, status=Story.StatusChoices.PUBLISHED)
         return serializer.save(user=self.request.user, story=story)
 
     def get_permissions(self):
