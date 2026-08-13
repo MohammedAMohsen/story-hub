@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count, Exists, OuterRef, Value, BooleanField
 from rest_framework import filters
+from django.core.cache import cache
 from apps.bookmarks.models import Bookmark
 from apps.likes.models import Like
 from apps.follows.models import Follow
@@ -115,3 +116,11 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
     pagination_class = None
+    
+    def list(self, request, *args, **kwargs):
+        cached_response = cache.get('categories')
+        if cached_response is not None:
+            return Response(cached_response)
+        response = super().list(request, *args, **kwargs)
+        cache.set('categories', response.data, timeout=604800) # timeout: 1 week 
+        return response
