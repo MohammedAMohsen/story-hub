@@ -4,4 +4,4 @@ from .models import Like
 
 @admin.register(Like)
 class LoveAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("user", "created_at", 'content_type', 'content_object')

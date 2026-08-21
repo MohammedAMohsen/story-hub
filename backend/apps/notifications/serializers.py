@@ -20,13 +20,12 @@ class NotificationSerializer(serializers.ModelSerializer):
         if obj.target is None:
             return None
         if obj.content_type.model == "story":
-            return {
-                'type': 'story',
-                'slug': obj.target.slug,
-            }
+            return {'type': 'story', 'slug': obj.target.slug, 'title': obj.target.title}
         if obj.content_type.model == "comment":
             return {
-                'type': 'comment',
-                'id': obj.target.id,
+                'type': 'comment', 'id': obj.target.id,
+                'content': obj.target.content[:50],
+                'story_slug': obj.target.story.slug,
+                'parent': str(obj.target.parent_id) if obj.target.parent_id else None
             }
         return None

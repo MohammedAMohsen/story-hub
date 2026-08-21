@@ -12,7 +12,7 @@ from .serializers import CommentWriteSerializer, CommentSerializer
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.select_related("user__profile").annotate(replies_count=Count("replies"))
+    queryset = Comment.objects.select_related("user__profile").annotate(replies_count=Count("replies")).order_by('-created_at')
     serializer_class = CommentWriteSerializer
 
     @property

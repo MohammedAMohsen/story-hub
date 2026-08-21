@@ -650,6 +650,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Story'
           description: ''
+  /api/stories/liked/:
+    get:
+      operationId: api_stories_liked_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Story'
+          description: ''
   /api/stories/me/:
     get:
       operationId: api_stories_me_retrieve
@@ -1406,6 +1421,9 @@ components:
           maxLength: 150
         full_name:
           type: string
+        avatar:
+          type: string
+          format: uri
         username:
           type: string
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
@@ -1421,6 +1439,7 @@ components:
           format: date-time
           readOnly: true
       required:
+      - avatar
       - date_joined
       - email
       - first_name
@@ -1628,6 +1647,9 @@ components:
           maxLength: 150
         full_name:
           type: string
+        avatar:
+          type: string
+          format: uri
         username:
           type: string
           description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_

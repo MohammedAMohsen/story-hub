@@ -38,9 +38,10 @@ class CustomUserCreateSerializer(UserCreatePasswordRetypeSerializer):
 
 class CustomUserSerializer(UserSerializer):
     full_name = serializers.CharField(source='get_full_name')
+    avatar = serializers.ImageField(source='profile.avatar')
     class Meta(UserSerializer.Meta):
         model = User
-        fields = ('id', 'first_name', 'last_name', 'full_name', 'username', 'email', 'date_joined')
+        fields = ('id', 'first_name', 'last_name', 'full_name', 'avatar', 'username', 'email', 'date_joined')
         extra_kwargs = {
             'date_joined': {'read_only': True}
         }

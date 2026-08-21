@@ -34,3 +34,7 @@ class AnonymousStoryAccessTests(TestCase):
         response = self.client.get(f"/api/stories/{self.story.slug}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(response.data["is_liked"])
+
+    def test_anonymous_user_can_list_liked_stories(self):
+        response = self.client.get("/api/stories/liked/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

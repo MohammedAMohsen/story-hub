@@ -37,14 +37,14 @@ class StoryViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'author_stories']:
             permission_classes = [AllowAny]
-        elif self.action in ['create', 'me_stories', 'following_stories']:
+        elif self.action in ['create', 'me_stories', 'following_stories', 'liked_stories']:
             permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsAuthenticated, IsAuthor]
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
-        if self.action in ['list', 'me_stories', 'retrieve', 'author_stories', 'following_stories']:
+        if self.action in ['list', 'me_stories', 'retrieve', 'author_stories', 'following_stories', 'liked_stories']:
             return StorySerializer
         return super().get_serializer_class()
 
@@ -98,6 +98,11 @@ class StoryViewSet(viewsets.ModelViewSet):
         status = request.query_params.get("status")
         if status:
             queryset = queryset.filter(status=status)
+        return self.serialize_queryset(queryset)
+
+    @action(detail=False, methods=['GET'], url_path="liked")
+    def liked_stories(self, request):
+        queryset = self.get_queryset().filter(likes__user=request.user).order_by('-likes__created_at')
         return self.serialize_queryset(queryset)
 
     @action(detail=False, methods=['GET'], url_path=r'author/(?P<username>[a-zA-Z0-9_.-]+)')
