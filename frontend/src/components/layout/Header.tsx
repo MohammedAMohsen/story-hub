@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import logo from "../../assets/logo.png";
+import { Logo } from "../ui/Logo";
 import { useUIStore } from "../../store/uiStore";
 import { useAuthStore } from "../../store/authStore";
 import { useNotificationsCount, useNotificationsPreview } from "../../hooks/useNotifications";
@@ -62,7 +62,7 @@ export function Header() {
           <span className="material-symbols-outlined">menu</span>
         </button>
         <Link to={isAuthenticated ? "/" : "/login"}>
-          <img src={logo} alt="StoryHub" className="w-auto object-contain transition-all p-0 m-0 h-13" />
+          <Logo className="w-auto object-contain transition-all p-0 m-0 h-13" />
         </Link>
       </div>
 

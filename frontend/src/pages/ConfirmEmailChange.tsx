@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { fullLogout } from "../lib/auth";
 import { useAuthStore } from "../store/authStore";
-import logo from "../assets/logo.png";
+import { Logo } from "../components/ui/Logo";
 
 type Status = "loading" | "success" | "error";
 
@@ -59,7 +59,7 @@ export function ConfirmEmailChange() {
     <div className="dot-pattern min-h-screen flex items-center justify-center px-6 bg-surface">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <img src={logo} alt="StoryHub" className="h-10 w-auto object-contain" />
+          <Logo className="w-auto object-contain transition-all p-0 m-0 h-13" />
         </div>
 
         <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl shadow-lg p-8 md:p-10 flex flex-col items-center text-center gap-5">
