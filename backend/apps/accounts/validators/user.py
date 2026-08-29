@@ -31,7 +31,7 @@ def validate_name(value):
 def validate_username(value):
     if value.lower() in RESERVED_USERNAMES:
         raise serializers.ValidationError("This username is reserved.")
-    if value.split("."):
+    if "." in value:
         print(value.split())
         raise serializers.ValidationError("This username should not contain `.` ")
     return value.lower()

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.accounts.validators import validate_avatar_cover
+from apps.accounts.validators import validate_story_cover
 from .models import Story, Category, Tag
 
 
@@ -28,12 +28,14 @@ class TagField(serializers.Field):
 
 class StoryWriteSerializer(serializers.ModelSerializer):
     tags = TagField(required=False)
+    cover = serializers.ImageField(required=False, allow_null=True)
     class Meta:
         model = Story
-        fields = ('title', 'content', 'category', 'tags', 'cover', 'status')
+        fields = ('slug', 'title', 'content', 'category', 'tags', 'cover', 'status')
+        read_only_fields = ('slug',)
 
     def validate_cover(self, value):
-        return validate_avatar_cover(value)
+        return validate_story_cover(value)
 
     def create(self, validated_data):
         tags = validated_data.pop('tags', [])
@@ -77,3 +79,8 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ('id',"name",'slug')
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ('id',"name")

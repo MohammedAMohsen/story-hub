@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Subquery, Count, Q
 from apps.accounts.models import User
 from rest_framework.pagination import PageNumberPagination
 from .models import Follow
@@ -29,6 +29,7 @@ class FollowAPIView(APIView):
                 User.objects
                 .filter(following_relationships__following=user)
                 .select_related('profile')
+                .order_by('-created_at')
                 .annotate(is_following=is_following)
             )
         elif relationship == 'following':
@@ -36,7 +37,14 @@ class FollowAPIView(APIView):
                 User.objects
                 .filter(follower_relationships__follower=user)
                 .select_related('profile')
-                .annotate(is_following=is_following)
+                .annotate(
+                    is_following=is_following,
+                    story_count=Count('stories', distinct=True, filter=Q(stories__status='Published'),),
+                    # followers_count=Count("follower_relationships", distinct=True), 
+                    # Use a subquery to calculate followers independently and avoid JOIN-related count errors.
+                    followers_count=Subquery(Follow.objects.filter(following=OuterRef('pk')).values('following').annotate(count=Count('pk')).values('count')),
+                )
+                .order_by('-created_at')
             )
         else:
             raise ValidationError({"show": "Expected 'followers' or 'following'."})

@@ -6,6 +6,7 @@ from apps.stories.models import Story
 from apps.likes.models import Like
 from django.db.models import Prefetch, Count, Exists, OuterRef
 from rest_framework.pagination import PageNumberPagination
+from apps.follows.models import Follow
 from .serializers import BookmarkSerializer, BookmarkCreateSerializer
 from .models import Bookmark
 
@@ -21,6 +22,7 @@ class BookmarkAPIView(APIView):
             .annotate(
                 comments_count=Count("comments", distinct=True),
                 likes_count=Count("likes", distinct=True),
+                is_following=Exists(Follow.objects.filter(follower=self.request.user, following=OuterRef('author'))),
                 is_liked=Exists(Like.objects.filter(user=self.request.user, story=OuterRef('pk'))),
                 is_saved=Exists(Bookmark.objects.filter(user=self.request.user, story=OuterRef('pk')))
             )

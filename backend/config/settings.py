@@ -158,7 +158,6 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication'
-        ,'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend'
@@ -182,7 +181,7 @@ SPECTACULAR_SETTINGS = {
 # JWT Contfiguration
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT', 'Bearer'),
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -191,6 +190,7 @@ SIMPLE_JWT = {
 
 # DJOSER Contfiguration
 DJOSER = {
+    'TOKEN_MODEL': None,
     "PASSWORD_RESET_CONFIRM_RETYPE": True,
     "SET_PASSWORD_RETYPE": True,
     "SEND_ACTIVATION_EMAIL": True,

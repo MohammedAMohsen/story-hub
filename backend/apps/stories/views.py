@@ -10,8 +10,8 @@ from apps.bookmarks.models import Bookmark
 from apps.likes.models import Like
 from apps.follows.models import Follow
 from .permissions import IsAuthor
-from .models import Story, Category
-from .serializers import StoryWriteSerializer, StorySerializer, CategorySerializer
+from .models import Story, Category, Tag
+from .serializers import StoryWriteSerializer, StorySerializer, CategorySerializer, TagSerializer
 
 
 class StoryViewSet(viewsets.ModelViewSet):
@@ -32,6 +32,8 @@ class StoryViewSet(viewsets.ModelViewSet):
         "^author__first_name",
         "^author__last_name",
         "title", "content",
+        "category__name",
+        "tags__name",
     ]
 
     def get_permissions(self):
@@ -129,3 +131,10 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         response = super().list(request, *args, **kwargs)
         cache.set('categories', response.data, timeout=604800) # timeout: 1 week 
         return response
+
+
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [AllowAny]
+    pagination_class = None

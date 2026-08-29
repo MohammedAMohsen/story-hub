@@ -39,12 +39,16 @@ class CustomUserCreateSerializer(UserCreatePasswordRetypeSerializer):
 class CustomUserSerializer(UserSerializer):
     full_name = serializers.CharField(source='get_full_name')
     avatar = serializers.ImageField(source='profile.avatar')
+    has_usable_password = serializers.SerializerMethodField() 
     class Meta(UserSerializer.Meta):
         model = User
-        fields = ('id', 'first_name', 'last_name', 'full_name', 'avatar', 'username', 'email', 'date_joined')
+        fields = ('id', 'first_name', 'last_name', 'full_name', 'avatar', 'username', 'email', 'date_joined', 'has_usable_password')
         extra_kwargs = {
             'date_joined': {'read_only': True}
         }
+
+    def get_has_usable_password(self, obj):
+        return obj.has_usable_password()
 
     def validate_first_name(self, value):
         return validate_name(value)

@@ -5,7 +5,7 @@ from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework import filters
 from apps.follows.models import Follow
-from django.db.models import Count, Exists, OuterRef, Value, BooleanField
+from django.db.models import Count, Exists, OuterRef, Value, BooleanField, Q
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -89,7 +89,7 @@ class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
             .annotate(
                 followers_count=Count("user__follower_relationships", distinct=True),
                 following_count=Count('user__following_relationships', distinct=True),
-                story_count=Count('user__stories', distinct=True),
+                story_count=Count('user__stories', distinct=True, filter=Q(user__stories__status='Published'),),
                 is_following=is_following
             )
         )

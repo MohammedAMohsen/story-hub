@@ -22,7 +22,7 @@ class User(AbstractUser):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     avatar = models.ImageField(default='user/avatars/default.png', upload_to="user/avatars/", blank=True)
-    cover = models.ImageField(default='user/cover/defaultCover.jpg', upload_to='user/cover/', blank=True)
+    cover = models.ImageField(default='user/cover/defaultCover.png', upload_to='user/cover/', blank=True)
     bio = models.TextField(blank=True, null=True)
     birth_date = models.DateField(blank=True, null=True)
     location = models.CharField(max_length=40, blank=True)
